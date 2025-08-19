@@ -1,25 +1,24 @@
 import { useState } from "react";
+import { searchQuery } from "../../services/api"
 
 function SearchDocs() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
-  const [searched, setSearched] = useState(false); // ✅ Para saber si ya se buscó
+  const [searched, setSearched] = useState(false); 
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    try {
-      const response = await fetch(`http://localhost:8000/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error("Error al buscar documentos");
-      const data = await response.json();
+ const handleSearch = async () => {
+  if (!query.trim()) return;
 
-      setResults(Array.isArray(data) ? data : []);
-      setSearched(true); // ✅ Marcamos que ya hubo búsqueda
-    } catch (err) {
-      console.error(err);
-      setResults([]);
-      setSearched(true);
-    }
-  };
+  try {
+    const data = await searchQuery(query);
+    setResults(Array.isArray(data) ? data : []);
+    setSearched(true);
+  } catch (err) {
+    console.error(err);
+    setResults([]);
+    setSearched(true);
+  }
+};
 
   return (
     <div className="bg-white p-6 rounded shadow">

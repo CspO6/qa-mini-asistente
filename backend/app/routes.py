@@ -1,8 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from typing import List
-from app.logic import process_files, search_query, answer_question, delete_document_logic
-import os
+
+from app.services.file_processing import process_files
+from app.services.question_answering import search_query, answer_question
+from app.services.deletion import delete_document_logic
+from app.services.file_access import list_uploaded_files, get_uploaded_file_response
+
 
 router = APIRouter()
 UPLOAD_DIR = "./uploaded_files"
@@ -20,17 +24,12 @@ async def ask(question: dict):
     return answer_question(question.get("question", ""))
 
 @router.get("/files")
-def list_uploaded_files():
-    if not os.path.exists(UPLOAD_DIR):
-        return []
-    return os.listdir(UPLOAD_DIR)
+def get_files():
+    return list_uploaded_files()
 
 @router.get("/uploaded_files/{filename}")
-def get_uploaded_file(filename: str):
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(file_path):
-        return {"detail": "Not Found"}
-    return FileResponse(file_path, media_type="application/pdf", filename=filename)
+def get_file(filename: str):
+    return get_uploaded_file_response(filename)
 
 @router.delete("/delete")
 async def delete_document(filename: str = Query(..., description="Nombre exacto del archivo")):

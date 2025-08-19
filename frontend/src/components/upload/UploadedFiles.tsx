@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
-import Swal from 'sweetalert2';
-import { Trash } from 'lucide-react';
+import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
+import { Trash } from "lucide-react";
+import { getUploadedFiles, deleteFile, getFileURL } from "../../services/api";
 
 function UploadedFiles() {
   const [files, setFiles] = useState<string[]>([]);
 
   const fetchFiles = async () => {
     try {
-      const response = await fetch('http://localhost:8000/files');
-      if (!response.ok) throw new Error('Error al obtener archivos');
-      const data = await response.json();
+      const data = await getUploadedFiles();
       setFiles(data);
     } catch (err) {
       console.error(err);
@@ -18,32 +17,22 @@ function UploadedFiles() {
 
   const handleDelete = async (filename: string) => {
     Swal.fire({
-      title: '¿Estás seguro?',
+      title: "¿Estás seguro?",
       text: `Se eliminará el archivo "${filename}"`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await fetch(
-            `http://localhost:8000/delete?filename=${encodeURIComponent(filename)}`,
-            {
-              method: 'DELETE',
-            }
-          );
-
-          if (!response.ok) throw new Error('Error al eliminar');
-
-          Swal.fire('Eliminado', 'El archivo fue eliminado correctamente.', 'success');
-
-          // refrescar lista
+          await deleteFile(filename);
+          Swal.fire("Eliminado", "El archivo fue eliminado correctamente.", "success");
           fetchFiles();
         } catch (err) {
-          Swal.fire('Error', 'No se pudo eliminar el archivo.', 'error');
+          Swal.fire("Error", "No se pudo eliminar el archivo.", "error");
         }
       }
     });
@@ -61,12 +50,9 @@ function UploadedFiles() {
       ) : (
         <ul className="space-y-2 text-sm">
           {files.map((file, index) => (
-            <li
-              key={index}
-              className="flex justify-between items-center border-b pb-1"
-            >
+            <li key={index} className="flex justify-between items-center border-b pb-1">
               <a
-                href={`http://localhost:8000/uploaded_files/${encodeURIComponent(file)}`}
+                href={getFileURL(file)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"

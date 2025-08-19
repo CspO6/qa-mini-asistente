@@ -1,9 +1,9 @@
 import { useState } from "react";
-import UploadPDF from "./components/Uploader";
-import SearchBox from "./components/SearchResults";
-import UploadedFiles from "./components/UploadedFiles";
-import AskDocs from "./components/AskDocs"; 
-import Navbar from "./components/Nav"; // 👈 renombrado bien
+import UploadPDF from "./components/upload/Uploader";
+import SearchBox from "./components/search/SearchResults";
+import UploadedFiles from "./components/upload/UploadedFiles";
+import AskDocs from "./components/search/AskDocs"; 
+import Navbar from "./components/layout/Nav"; // 👈 renombrado bien
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<

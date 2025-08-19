@@ -1,62 +1,18 @@
 import os
-from typing import List
-from fastapi import UploadFile
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from PyPDF2 import PdfReader
 
-
-
 UPLOAD_DIR = "uploaded_files"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-# Memoria temporal (puedes mejorarlo luego)
-documents = []
-filenames = []
-
-vectorizer = TfidfVectorizer()
-tfidf_matrix = None
-
-def extract_text(file: UploadFile):
-    if file.filename.endswith(".txt"):
-        return file.file.read().decode("utf-8")
-    elif file.filename.endswith(".pdf"):
-        reader = PdfReader(file.file)
-        return "\n".join([page.extract_text() or "" for page in reader.pages])
-    return ""
-
-async def process_files(files: List[UploadFile]):
-    global documents, filenames, tfidf_matrix
-
-    documents.clear()
-    filenames.clear()
-
-    for file in files:
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
-
-        # Guardar el archivo en disco
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-
-        # Volver a abrir para procesamiento (PDF/txt)
-        with open(file_path, "rb") as f:
-            fake_upload = UploadFile(filename=file.filename, file=f)
-            text = extract_text(fake_upload)
-
-        documents.append(text)
-        filenames.append(file.filename)
-
-    tfidf_matrix = vectorizer.fit_transform(documents)
-    return { "message": f"{len(files)} archivos subidos correctamente." }
 
 def search_query(q: str):
     results = []
-    if not os.path.exists(UPLOAD_DIR):
-        return []
-
     q_lower = q.lower()
     fragments = []
     sources = []
+
+    if not os.path.exists(UPLOAD_DIR):
+        return []
 
     for file in os.listdir(UPLOAD_DIR):
         path = os.path.join(UPLOAD_DIR, file)
@@ -72,13 +28,11 @@ def search_query(q: str):
 
             text_lower = text.lower()
             start = 0
-
             while True:
                 pos = text_lower.find(q_lower, start)
                 if pos == -1:
                     break
 
-                # contexto alrededor de la coincidencia
                 snippet_start = max(0, pos - 100)
                 snippet_end = min(len(text), pos + len(q) + 200)
                 snippet = text[snippet_start:snippet_end].strip().replace("\n", " ")
@@ -90,7 +44,6 @@ def search_query(q: str):
 
         except Exception as e:
             print(f"Error leyendo {file}: {e}")
-
 
     if fragments:
         vectorizer = TfidfVectorizer()
@@ -106,11 +59,8 @@ def search_query(q: str):
                 "score": round(float(score), 3)
             })
 
-
     results.sort(key=lambda x: x["score"], reverse=True)
     return results
-
-
 
 def answer_question(question: str):
     results = search_query(question)
@@ -127,16 +77,3 @@ def answer_question(question: str):
         "answer": f"Según los documentos:\n{context}",
         "citations": [r["document"] for r in results]
     }
-
-async def delete_document_logic(filename: str):
-    try:
-        file_path = os.path.join(UPLOAD_DIR, filename)
-
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            return {"message": f"Documento {filename} eliminado correctamente."}
-        else:
-            return {"error": f"No se encontró el documento {filename}."}
-    except Exception as e:
-        return {"error": str(e)}
-

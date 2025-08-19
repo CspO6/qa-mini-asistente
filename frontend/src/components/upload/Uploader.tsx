@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
-import { UploadCloud, Trash } from 'lucide-react';
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { UploadCloud, Trash } from "lucide-react";
+import {uploadFiles, getUploadedFiles, deleteFile} from "../../services/api"; 
 
 function UploadPDF() {
   const [files, setFiles] = useState<FileList | null>(null);
@@ -8,47 +9,34 @@ function UploadPDF() {
 
   const fetchUploadedFiles = async () => {
     try {
-      const response = await fetch('http://localhost:8000/files');
-      if (!response.ok) throw new Error('Error al obtener archivos');
-
-      const data = await response.json();
+      const data = await getUploadedFiles();
       setUploadedFiles(data);
     } catch (error) {
-      console.error('Error al obtener archivos:', error);
+      console.error("Error al obtener archivos:", error);
     }
   };
 
   const handleDelete = async (filename: string) => {
-    Swal.fire({
-      title: '¿Estás seguro?',
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
       text: `Se eliminará el archivo "${filename}"`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const response = await fetch(
-            `http://localhost:8000/delete?filename=${encodeURIComponent(filename)}`,
-            {
-              method: 'DELETE',
-            }
-          );
-
-          if (!response.ok) throw new Error('Error al eliminar');
-
-          Swal.fire('Eliminado', 'El archivo fue eliminado correctamente.', 'success');
-
-          // refrescar lista
-          fetchUploadedFiles();
-        } catch (err) {
-          Swal.fire('Error', 'No se pudo eliminar el archivo.', 'error');
-        }
-      }
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
     });
+
+    if (result.isConfirmed) {
+      try {
+        await deleteFile(filename);
+        Swal.fire("Eliminado", "El archivo fue eliminado correctamente.", "success");
+        fetchUploadedFiles();
+      } catch (err) {
+        Swal.fire("Error", "No se pudo eliminar el archivo.", "error");
+      }
+    }
   };
 
   useEffect(() => {
@@ -59,37 +47,23 @@ function UploadPDF() {
     e.preventDefault();
 
     if (!files || files.length === 0) {
-      Swal.fire('Error', 'Debes seleccionar al menos un archivo.', 'error');
+      Swal.fire("Error", "Debes seleccionar al menos un archivo.", "error");
       return;
     }
 
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append('files', files[i]);
-    }
-
     try {
-      const response = await fetch('http://localhost:8000/ingest', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Error en la respuesta del servidor');
-
-      await response.json();
-
+      await uploadFiles(Array.from(files));
       Swal.fire({
-        title: '¡Éxito!',
+        title: "¡Éxito!",
         text: `${files.length} archivo(s) subido(s) correctamente.`,
-        icon: 'success',
+        icon: "success",
         timer: 2500,
         showConfirmButton: false,
       });
-
       setFiles(null);
-      fetchUploadedFiles(); // 🔄 refrescar lista
+      fetchUploadedFiles();
     } catch (error) {
-      Swal.fire('Error', 'No se pudieron subir los archivos.', 'error');
+      Swal.fire("Error", "No se pudieron subir los archivos.", "error");
     }
   };
 
@@ -131,7 +105,6 @@ function UploadPDF() {
         </button>
       </form>
 
-      {/* Archivos ya procesados */}
       {uploadedFiles.length > 0 && (
         <div className="bg-white shadow-md rounded-xl p-6 w-full max-w-md">
           <h3 className="text-lg font-semibold mb-2">Archivos ya procesados:</h3>

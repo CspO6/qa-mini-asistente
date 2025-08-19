@@ -1,28 +1,24 @@
 import React, { useState } from "react";
+import { askQuestion } from "../../services/api";
+
 
 export default function AskDocs() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [citations, setCitations] = useState<string[]>([]);
 
-  const handleAsk = async () => {
-    if (!question.trim()) return;
+const handleAsk = async () => {
+  if (!question.trim()) return;
 
-    try {
-      const res = await fetch("http://localhost:8000/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
-      });
-
-      const data = await res.json();
-      setAnswer(data.answer || "No se encontró respuesta.");
-      setCitations(data.citations || []); // si el back devuelve citas
-    } catch (err) {
-      setAnswer("Error consultando la API.");
-      setCitations([]);
-    }
-  };
+  try {
+    const data = await askQuestion(question); 
+    setAnswer(data.answer || "No se encontró respuesta.");
+    setCitations(data.citations || []);
+  } catch (err) {
+    setAnswer("Error consultando la API.");
+    setCitations([]);
+  }
+};
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
