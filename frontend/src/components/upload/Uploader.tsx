@@ -14,9 +14,7 @@ function UploadPDF() {
   const fetchUploadedFiles = async () => {
     try {
       const data = await getUploadedFiles();
-      if (!Array.isArray(data)) {
-        throw new Error("Respuesta inesperada del servidor.");
-      }
+      if (!Array.isArray(data)) throw new Error("Respuesta inesperada del servidor.");
       setUploadedFiles(data);
     } catch (error) {
       console.error("Error al obtener archivos:", error);
@@ -68,28 +66,25 @@ function UploadPDF() {
     const fileArray = Array.from(files);
 
     const invalidFiles = fileArray.filter(
-      (file) =>
-        !validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+      (file) => !validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
     );
 
     if (invalidFiles.length > 0) {
       Swal.fire(
         "Error",
-        `Los siguientes archivos no son válidos (.pdf o .txt):\n${invalidFiles
-          .map((f) => f.name)
-          .join(", ")}`,
+        `Los siguientes archivos no son válidos (.pdf o .txt):\n${invalidFiles.map((f) => f.name).join(", ")}`,
         "error"
       );
       return;
     }
 
-    const tooBigFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE_BYTES);
+    const tooBigFiles = fileArray.filter((file) => file.size > MAX_FILE_SIZE_BYTES);
 
     if (tooBigFiles.length > 0) {
       Swal.fire(
         "Error",
         `Los siguientes archivos exceden los ${MAX_FILE_SIZE_MB}MB permitidos:\n${tooBigFiles
-          .map(f => f.name)
+          .map((f) => f.name)
           .join(", ")}`,
         "error"
       );
@@ -114,14 +109,14 @@ function UploadPDF() {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 px-4 space-y-6">
+    <div className="flex flex-col items-center bg-gray-100 px-4 pt-8 pb-12 space-y-6 min-h-screen">
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow-lg p-8 rounded-xl w-full max-w-md space-y-4"
+        className="bg-white shadow-lg p-6 sm:p-8 rounded-xl w-full max-w-lg space-y-4"
       >
-        <h2 className="text-xl font-bold">Subir archivos PDF o TXT</h2>
+        <h2 className="text-xl font-bold text-center">Subir archivos PDF o TXT</h2>
 
-        <label className="w-full cursor-pointer inline-block bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded text-center">
+        <label className="w-full cursor-pointer inline-block bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded text-center transition">
           Elegir archivos
           <input
             type="file"
@@ -153,18 +148,18 @@ function UploadPDF() {
       </form>
 
       {uploadedFiles.length > 0 && (
-        <div className="bg-white shadow-md rounded-xl p-6 w-full max-w-md">
-          <h3 className="text-lg font-semibold mb-2">Archivos ya procesados:</h3>
+        <div className="bg-white shadow-md rounded-xl p-6 w-full max-w-lg">
+          <h3 className="text-lg font-semibold mb-3">Archivos ya procesados:</h3>
           <ul className="space-y-2 text-sm">
             {uploadedFiles.map((file, index) => (
               <li
                 key={index}
-                className="flex justify-between items-center border-b pb-1"
+                className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b pb-2"
               >
-                <span>{file}</span>
+                <span className="break-words">{file}</span>
                 <button
                   onClick={() => handleDelete(file)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 mt-1 sm:mt-0"
                   aria-label={`Eliminar ${file}`}
                 >
                   <Trash className="w-5 h-5" />
