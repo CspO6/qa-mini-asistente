@@ -5,17 +5,31 @@ import { getUploadedFiles, deleteFile, getFileURL } from "../../services/api";
 
 function UploadedFiles() {
   const [files, setFiles] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchFiles = async () => {
     try {
       const data = await getUploadedFiles();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Respuesta inesperada del servidor.");
+      }
+
       setFiles(data);
+      setError(null);
     } catch (err) {
       console.error(err);
+      setFiles([]);
+      setError("No se pudieron cargar los archivos.");
     }
   };
 
   const handleDelete = async (filename: string) => {
+    if (!filename || filename.trim().length === 0) {
+      Swal.fire("Error", "Nombre de archivo inválido.", "error");
+      return;
+    }
+
     Swal.fire({
       title: "¿Estás seguro?",
       text: `Se eliminará el archivo "${filename}"`,
@@ -32,6 +46,7 @@ function UploadedFiles() {
           Swal.fire("Eliminado", "El archivo fue eliminado correctamente.", "success");
           fetchFiles();
         } catch (err) {
+          console.error(err);
           Swal.fire("Error", "No se pudo eliminar el archivo.", "error");
         }
       }
@@ -45,7 +60,12 @@ function UploadedFiles() {
   return (
     <div className="bg-white p-6 rounded shadow">
       <h2 className="text-lg font-semibold mb-4">Archivos subidos</h2>
-      {files.length === 0 ? (
+
+      {error && (
+        <p className="text-red-600 mb-2">{error}</p>
+      )}
+
+      {files.length === 0 && !error ? (
         <p className="text-gray-600">No hay archivos aún.</p>
       ) : (
         <ul className="space-y-2 text-sm">
@@ -62,6 +82,7 @@ function UploadedFiles() {
               <button
                 onClick={() => handleDelete(file)}
                 className="text-red-500 hover:text-red-700"
+                aria-label={`Eliminar ${file}`}
               >
                 <Trash className="w-5 h-5" />
               </button>

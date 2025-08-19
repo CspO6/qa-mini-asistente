@@ -1,24 +1,63 @@
 import React, { useState } from "react";
-import { askQuestion } from "../../services/api";
-
+import { askQuestion, getFileURL } from "../../services/api";
 
 export default function AskDocs() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [citations, setCitations] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-const handleAsk = async () => {
-  if (!question.trim()) return;
+  const handleAsk = async () => {
+    const trimmed = question.trim();
 
-  try {
-    const data = await askQuestion(question); 
-    setAnswer(data.answer || "No se encontró respuesta.");
-    setCitations(data.citations || []);
-  } catch (err) {
-    setAnswer("Error consultando la API.");
-    setCitations([]);
-  }
-};
+    // Validaciones
+    if (!trimmed) {
+      setError("La pregunta no puede estar vacía.");
+      setAnswer(null);
+      setCitations([]);
+      return;
+    }
+
+    if (trimmed.length < 5) {
+      setError("La pregunta es demasiado corta.");
+      setAnswer(null);
+      setCitations([]);
+      return;
+    }
+
+    if (trimmed.length > 300) {
+      setError("La pregunta es demasiado larga.");
+      setAnswer(null);
+      setCitations([]);
+      return;
+    }
+
+    if (/^[^a-zA-Z0-9]+$/.test(trimmed)) {
+      setError("La pregunta no contiene caracteres válidos.");
+      setAnswer(null);
+      setCitations([]);
+      return;
+    }
+
+    // (opcional) caracteres peligrosos tipo < > etc.
+    if (/[<>]/.test(trimmed)) {
+      setError("La pregunta contiene caracteres no permitidos.");
+      setAnswer(null);
+      setCitations([]);
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const data = await askQuestion(trimmed);
+      setAnswer(data.answer || "No se encontró respuesta.");
+      setCitations(data.citations || []);
+    } catch (err) {
+      setAnswer("Error consultando la API.");
+      setCitations([]);
+    }
+  };
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
@@ -39,6 +78,10 @@ const handleAsk = async () => {
         Preguntar
       </button>
 
+      {error && (
+        <p className="text-sm text-red-600 mt-1">{error}</p>
+      )}
+
       {answer && (
         <div className="mt-4 p-3 border rounded bg-gray-50">
           <p className="text-gray-700">
@@ -50,7 +93,15 @@ const handleAsk = async () => {
               <strong>Fuentes:</strong>
               <ul className="list-disc list-inside">
                 {citations.map((cita, i) => (
-                  <li key={i}>{cita}</li>
+                  <li key={i}>
+                   <a
+                      href={getFileURL(cita)}
+                      download
+                      className="text-blue-600 hover:underline"
+                    >
+                      {cita}
+                    </a>
+                  </li>
                 ))}
               </ul>
             </div>

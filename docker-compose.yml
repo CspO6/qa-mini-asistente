@@ -1,12 +1,22 @@
-version: "3.9"
+version: '3.8'
+
 services:
   backend:
     build:
       context: ./backend
-    container_name: qa_backend
+    container_name: backend-qa
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-    restart: unless-stopped
+      - ./backend/uploaded_files:/app/uploaded_files
+    restart: always
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend-qa
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: always

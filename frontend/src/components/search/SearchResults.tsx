@@ -1,30 +1,68 @@
 import { useState } from "react";
-import { searchQuery } from "../../services/api"
+import { searchQuery, getFileURL } from "../../services/api";
 
 function SearchDocs() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
-  const [searched, setSearched] = useState(false); 
+  const [searched, setSearched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
- const handleSearch = async () => {
-  if (!query.trim()) return;
+  const handleSearch = async () => {
+    const trimmed = query.trim();
 
-  try {
-    const data = await searchQuery(query);
-    setResults(Array.isArray(data) ? data : []);
-    setSearched(true);
-  } catch (err) {
-    console.error(err);
-    setResults([]);
-    setSearched(true);
-  }
-};
+    // Validaciones
+    if (!trimmed) {
+      setError("La búsqueda no puede estar vacía.");
+      setResults([]);
+      setSearched(false);
+      return;
+    }
+
+    if (trimmed.length < 3) {
+      setError("La búsqueda es demasiado corta.");
+      setResults([]);
+      setSearched(false);
+      return;
+    }
+
+    if (/^[^a-zA-Z0-9]+$/.test(trimmed)) {
+      setError("La búsqueda no contiene caracteres válidos.");
+      setResults([]);
+      setSearched(false);
+      return;
+    }
+
+    if (trimmed.length > 100) {
+      setError("La búsqueda es demasiado larga.");
+      setResults([]);
+      setSearched(false);
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const data = await searchQuery(trimmed);
+      setResults(Array.isArray(data) ? data : []);
+      setSearched(true);
+    } catch (err) {
+      console.error(err);
+      setResults([]);
+      setSearched(true);
+    }
+  };
 
   return (
     <div className="bg-white p-6 rounded shadow">
       <h2 className="text-lg font-semibold mb-4">Buscar en documentos</h2>
 
-      <div className="flex space-x-2 mb-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSearch();
+        }}
+        className="flex space-x-2 mb-4"
+      >
         <input
           type="text"
           value={query}
@@ -33,15 +71,15 @@ function SearchDocs() {
           className="border p-2 flex-1 rounded"
         />
         <button
-          onClick={handleSearch}
+          type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Buscar
         </button>
-      </div>
+      </form>
 
-      {/* Mensajes dinámicos */}
-      {!searched && <p className="text-gray-500">Escribe algo y presiona buscar.</p>}
+      {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+      {!searched && !error && <p className="text-gray-500">Escribe algo y presiona buscar.</p>}
       {searched && results.length === 0 && (
         <p className="text-red-500">No se encontraron coincidencias.</p>
       )}
@@ -49,7 +87,12 @@ function SearchDocs() {
       <ul className="space-y-3">
         {results.map((r, idx) => (
           <li key={idx} className="border-b pb-2">
-            <p><strong>Archivo:</strong> {r.document}</p>
+            <p>
+              <strong>Archivo:</strong>{" "}
+              <a href={getFileURL(r.document)} download>
+                {r.document}
+              </a>
+            </p>
             <p><strong>Coincidencia:</strong> {r.score.toFixed(3)}</p>
             <p className="text-gray-700">{r.fragment}</p>
           </li>
