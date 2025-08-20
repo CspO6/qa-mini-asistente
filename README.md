@@ -103,7 +103,7 @@ Hay que asegurarse de tener un entorno virtual y las dependencias instaladas:
 ```bash
 cd backend
 python -m venv env
-venv\Scripts\activate
+env\Scripts\activate
 pip install -r requirements.txt
 ```
 
