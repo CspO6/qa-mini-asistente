@@ -72,6 +72,7 @@ OPENAI_API_KEY=sk-...  # Reemplaza con tu propia clave de OpenAI
 
 ⚠️ Nota importante:
 Este archivo no está incluido en el repositorio por motivos de seguridad. Sin este archivo, no podrás realizar preguntas a los documentos utilizando la API de OpenAI.
+
 3. Levanta los servicios:
 
 docker-compose up --build
